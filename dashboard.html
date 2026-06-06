@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Dashboard — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="js/config.js"></script>
   <script src="js/layout.js"></script>
@@ -80,18 +80,18 @@
   const end   = `${y}-${String(m).padStart(2,'0')}-31`;
 
   // Saldo contas
-  const { data: accs } = await supabase.from('accounts').select('balance').eq('user_id', session.user.id).is('deleted_at', null);
+  const { data: accs } = await db.from('accounts').select('balance').eq('user_id', session.user.id).is('deleted_at', null);
   document.getElementById('totalBalance').textContent = formatCurrency((accs||[]).reduce((s,a)=>s+parseFloat(a.balance),0));
 
   // Receitas/despesas do mes
-  const { data: txs } = await supabase.from('transactions').select('type,amount,description,date').eq('user_id', session.user.id).gte('date', start).lte('date', end).is('deleted_at', null);
+  const { data: txs } = await db.from('transactions').select('type,amount,description,date').eq('user_id', session.user.id).gte('date', start).lte('date', end).is('deleted_at', null);
   const income  = (txs||[]).filter(t=>t.type==='income' ).reduce((s,t)=>s+parseFloat(t.amount),0);
   const expense = (txs||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount),0);
   document.getElementById('totalIncome' ).textContent = formatCurrency(income);
   document.getElementById('totalExpense').textContent = formatCurrency(expense);
 
   // Investimentos
-  const { data: invs } = await supabase.from('investments').select('invested_amount').eq('user_id', session.user.id).is('deleted_at', null);
+  const { data: invs } = await db.from('investments').select('invested_amount').eq('user_id', session.user.id).is('deleted_at', null);
   document.getElementById('totalInvested').textContent = formatCurrency((invs||[]).reduce((s,i)=>s+parseFloat(i.invested_amount),0));
 
   // Grafico evolucao 6 meses
@@ -102,7 +102,7 @@
     const ms=`${my}-${String(mm).padStart(2,'0')}-01`;
     const me=`${my}-${String(mm).padStart(2,'0')}-31`;
     labels.push(d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
-    const { data: mt } = await supabase.from('transactions').select('type,amount').eq('user_id',session.user.id).gte('date',ms).lte('date',me).is('deleted_at',null);
+    const { data: mt } = await db.from('transactions').select('type,amount').eq('user_id',session.user.id).gte('date',ms).lte('date',me).is('deleted_at',null);
     incData.push((mt||[]).filter(t=>t.type==='income' ).reduce((s,t)=>s+parseFloat(t.amount),0));
     expData.push((mt||[]).filter(t=>t.type==='expense').reduce((s,t)=>s+parseFloat(t.amount),0));
   }
@@ -124,7 +124,7 @@
   }
 
   // Recentes
-  const { data: rec } = await supabase.from('transactions').select('*').eq('user_id',session.user.id).is('deleted_at',null).order('date',{ascending:false}).limit(8);
+  const { data: rec } = await db.from('transactions').select('*').eq('user_id',session.user.id).is('deleted_at',null).order('date',{ascending:false}).limit(8);
   const el = document.getElementById('recentTx');
   if (!rec?.length) { el.innerHTML='<p class="text-gray-500 text-sm text-center py-6">Nenhuma transacao</p>'; return; }
   el.innerHTML = rec.map(t=>`

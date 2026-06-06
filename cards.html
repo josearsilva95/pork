@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Cartoes — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/layout.js"></script>
 </head>
@@ -89,7 +89,7 @@ let userId;
 })();
 
 async function load() {
-  const { data } = await supabase.from('cards').select('*').eq('user_id', userId).is('deleted_at', null).order('name');
+  const { data } = await db.from('cards').select('*').eq('user_id', userId).is('deleted_at', null).order('name');
   const list = document.getElementById('list');
   if (!data?.length) { list.innerHTML='<div class="col-span-full text-center text-gray-500 py-12"><p class="text-4xl mb-3">💳</p><p>Nenhum cartao cadastrado</p></div>'; return; }
   list.innerHTML = data.map(c=>{
@@ -123,13 +123,13 @@ async function load() {
     </div>`}).join('');
 }
 
-async function del(id) { if (!confirm('Remover este cartao?')) return; await supabase.from('cards').update({deleted_at:new Date().toISOString()}).eq('id',id); await load(); }
+async function del(id) { if (!confirm('Remover este cartao?')) return; await db.from('cards').update({deleted_at:new Date().toISOString()}).eq('id',id); await load(); }
 function openModal()  { document.getElementById('modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
 document.getElementById('cardForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  await supabase.from('cards').insert({user_id:userId, name:document.getElementById('name').value, brand:document.getElementById('brand').value, last_four:document.getElementById('last4').value||null, limit_amount:parseFloat(document.getElementById('limit').value), used_amount:0, closing_day:parseInt(document.getElementById('closing').value), due_day:parseInt(document.getElementById('due').value)});
+  await db.from('cards').insert({user_id:userId, name:document.getElementById('name').value, brand:document.getElementById('brand').value, last_four:document.getElementById('last4').value||null, limit_amount:parseFloat(document.getElementById('limit').value), used_amount:0, closing_day:parseInt(document.getElementById('closing').value), due_day:parseInt(document.getElementById('due').value)});
   closeModal(); document.getElementById('cardForm').reset(); await load();
 });
 </script>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Cadastro — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase.min.js"></script>
   <script src="js/config.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen flex items-center justify-center p-4">
@@ -63,7 +63,7 @@ document.getElementById('registerForm').addEventListener('submit', async (e) => 
   btn.textContent = 'Criando...'; btn.disabled = true;
   err.classList.add('hidden');
 
-  const { error } = await supabase.auth.signUp({
+  const { error } = await db.auth.signUp({
     email: document.getElementById('email').value,
     password: document.getElementById('password').value,
     options: { data: { full_name: document.getElementById('name').value } }

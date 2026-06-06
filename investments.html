@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Investimentos — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/layout.js"></script>
 </head>
@@ -103,7 +103,7 @@ let userId;
 })();
 
 async function load() {
-  const { data } = await supabase.from('investments').select('*').eq('user_id', userId).is('deleted_at', null).order('name');
+  const { data } = await db.from('investments').select('*').eq('user_id', userId).is('deleted_at', null).order('name');
   const inv   = (data||[]).reduce((s,i)=>s+parseFloat(i.invested_amount),0);
   const cur   = (data||[]).reduce((s,i)=>s+parseFloat(i.current_value||i.invested_amount),0);
   const gain  = cur - inv;
@@ -133,7 +133,7 @@ async function load() {
     </div>`}).join('');
 }
 
-async function del(id) { if (!confirm('Remover?')) return; await supabase.from('investments').update({deleted_at:new Date().toISOString()}).eq('id',id); await load(); }
+async function del(id) { if (!confirm('Remover?')) return; await db.from('investments').update({deleted_at:new Date().toISOString()}).eq('id',id); await load(); }
 function openModal()  { document.getElementById('modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
@@ -141,7 +141,7 @@ document.getElementById('invForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const inv = parseFloat(document.getElementById('invested').value);
   const cur = parseFloat(document.getElementById('current').value)||inv;
-  await supabase.from('investments').insert({user_id:userId, name:document.getElementById('name').value, type:document.getElementById('type').value, ticker:document.getElementById('ticker').value||null, invested_amount:inv, current_value:cur, quantity:1, avg_price:inv});
+  await db.from('investments').insert({user_id:userId, name:document.getElementById('name').value, type:document.getElementById('type').value, ticker:document.getElementById('ticker').value||null, invested_amount:inv, current_value:cur, quantity:1, avg_price:inv});
   closeModal(); document.getElementById('invForm').reset(); await load();
 });
 </script>

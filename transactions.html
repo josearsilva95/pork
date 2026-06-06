@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
   <meta charset="UTF-8">
@@ -6,7 +6,7 @@
   <title>Transacoes — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="js/supabase.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/layout.js"></script>
 </head>
@@ -91,7 +91,7 @@ let userId;
 async function load() {
   const search = document.getElementById('search').value.toLowerCase();
   const type   = document.getElementById('typeFilter').value;
-  let q = supabase.from('transactions').select('*').eq('user_id', userId).is('deleted_at', null).order('date', {ascending:false}).limit(50);
+  let q = db.from('transactions').select('*').eq('user_id', userId).is('deleted_at', null).order('date', {ascending:false}).limit(50);
   if (type) q = q.eq('type', type);
   const { data } = await q;
   const items = (data||[]).filter(t => !search || t.description.toLowerCase().includes(search));
@@ -115,7 +115,7 @@ async function load() {
 
 async function del(id) {
   if (!confirm('Remover esta transacao?')) return;
-  await supabase.from('transactions').update({ deleted_at: new Date().toISOString() }).eq('id', id);
+  await db.from('transactions').update({ deleted_at: new Date().toISOString() }).eq('id', id);
   await load();
 }
 
@@ -128,7 +128,7 @@ document.getElementById('txForm').addEventListener('submit', async (e) => {
   const err = document.getElementById('modalErr');
   btn.textContent = 'Salvando...'; btn.disabled = true; err.classList.add('hidden');
 
-  const { error } = await supabase.from('transactions').insert({
+  const { error } = await db.from('transactions').insert({
     user_id: userId,
     type:        document.getElementById('type').value,
     amount:      parseFloat(document.getElementById('amount').value),
