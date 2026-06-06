@@ -6,7 +6,7 @@ function formatCurrency(val) {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val || 0);
 }
 function formatDate(d) {
-  return new Date(d).toLocaleDateString('pt-BR');
+  return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR');
 }
 async function requireAuth() {
   const { data: { session } } = await supabase.auth.getSession();

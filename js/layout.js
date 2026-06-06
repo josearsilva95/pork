@@ -1,11 +1,10 @@
-// Sidebar HTML injetado em todas as páginas
 function renderLayout(activePage) {
   const nav = [
-    { href: 'dashboard.html',     icon: '📊', label: 'Dashboard'     },
-    { href: 'accounts.html',      icon: '🏦', label: 'Contas'        },
-    { href: 'cards.html',         icon: '💳', label: 'Cartões'       },
-    { href: 'transactions.html',  icon: '↔️',  label: 'Transações'   },
-    { href: 'investments.html',   icon: '📈', label: 'Investimentos' },
+    { href: 'dashboard.html',    icon: '📊', label: 'Dashboard'     },
+    { href: 'accounts.html',     icon: '🏦', label: 'Contas'        },
+    { href: 'cards.html',        icon: '💳', label: 'Cartoes'       },
+    { href: 'transactions.html', icon: '↔',  label: 'Transacoes'    },
+    { href: 'investments.html',  icon: '📈', label: 'Investimentos' },
   ];
 
   const links = nav.map(n => `

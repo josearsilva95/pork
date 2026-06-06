@@ -6,20 +6,19 @@
   <title>Contas — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
   <script src="js/layout.js"></script>
 </head>
 <body class="bg-gray-950 text-white h-screen flex overflow-hidden">
 
-<aside id="sidebar" class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 hidden lg:flex"></aside>
+<aside id="sidebar" class="w-64 bg-gray-900 border-r border-gray-800 flex-col shrink-0 hidden lg:flex"></aside>
 
 <div class="flex-1 flex flex-col overflow-hidden">
   <header class="h-16 bg-gray-900/50 border-b border-gray-800 flex items-center px-6 shrink-0">
     <h1 class="text-lg font-semibold">Contas</h1>
     <button onclick="openModal()" class="ml-auto bg-indigo-600 hover:bg-indigo-500 px-4 py-2 rounded-xl text-sm font-medium transition">+ Nova conta</button>
   </header>
-
   <main class="flex-1 overflow-y-auto p-6">
     <div id="list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <div class="col-span-full text-center text-gray-500 py-12">Carregando...</div>
@@ -27,13 +26,12 @@
   </main>
 </div>
 
-<!-- Modal -->
 <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
   <div class="bg-gray-900 border border-gray-800 rounded-2xl p-6 w-full max-w-md">
     <h2 class="text-lg font-semibold mb-4">Nova Conta</h2>
     <form id="accForm" class="space-y-3">
       <div>
-        <label class="block text-xs text-gray-400 mb-1">Nome da conta</label>
+        <label class="block text-xs text-gray-400 mb-1">Nome</label>
         <input id="name" type="text" required placeholder="Ex: Nubank, Bradesco..."
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
       </div>
@@ -42,14 +40,14 @@
           <label class="block text-xs text-gray-400 mb-1">Tipo</label>
           <select id="type" class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
             <option value="checking">Conta Corrente</option>
-            <option value="savings">Poupança</option>
+            <option value="savings">Poupanca</option>
             <option value="wallet">Carteira Digital</option>
             <option value="cash">Dinheiro</option>
           </select>
         </div>
         <div>
           <label class="block text-xs text-gray-400 mb-1">Saldo inicial (R$)</label>
-          <input id="balance" type="number" step="0.01" placeholder="0,00" value="0"
+          <input id="balance" type="number" step="0.01" placeholder="0.00" value="0"
             class="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-indigo-500">
         </div>
       </div>
@@ -63,7 +61,7 @@
 
 <script>
 const COLORS = ['#6366f1','#8b5cf6','#ec4899','#22c55e','#f59e0b','#06b6d4'];
-const TYPES = { checking:'Conta Corrente', savings:'Poupança', wallet:'Carteira Digital', cash:'Dinheiro' };
+const TYPES  = {checking:'Conta Corrente', savings:'Poupanca', wallet:'Carteira Digital', cash:'Dinheiro'};
 let userId;
 
 (async () => {
@@ -77,19 +75,19 @@ async function load() {
   const { data } = await supabase.from('accounts').select('*').eq('user_id', userId).is('deleted_at', null).order('name');
   const list = document.getElementById('list');
   if (!data?.length) {
-    list.innerHTML = '<div class="col-span-full text-center text-gray-500 py-12"><p class="text-4xl mb-3">🏦</p><p>Nenhuma conta cadastrada</p></div>';
+    list.innerHTML='<div class="col-span-full text-center text-gray-500 py-12"><p class="text-4xl mb-3">🏦</p><p>Nenhuma conta cadastrada</p></div>';
     return;
   }
-  list.innerHTML = data.map((a, i) => `
+  list.innerHTML = data.map((a,i)=>`
     <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5 hover:border-indigo-500/30 transition group">
       <div class="flex justify-between items-start mb-4">
-        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold" style="background:${COLORS[i%COLORS.length]}">
-          ${a.name[0]}
+        <div class="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg" style="background:${COLORS[i%COLORS.length]}">
+          ${a.name[0].toUpperCase()}
         </div>
-        <button onclick="del('${a.id}')" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition text-xl leading-none">×</button>
+        <button onclick="del('${a.id}')" class="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition text-2xl leading-none">x</button>
       </div>
       <p class="font-semibold">${a.name}</p>
-      <p class="text-xs text-gray-500 mb-3">${TYPES[a.type] || a.type}</p>
+      <p class="text-xs text-gray-500 mb-3">${TYPES[a.type]||a.type}</p>
       <p class="text-2xl font-bold font-mono">${formatCurrency(a.balance)}</p>
     </div>`).join('');
 }
@@ -100,23 +98,19 @@ async function del(id) {
   await load();
 }
 
-function openModal() { document.getElementById('modal').classList.remove('hidden'); }
+function openModal()  { document.getElementById('modal').classList.remove('hidden'); }
 function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
 document.getElementById('accForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  const bal = parseFloat(document.getElementById('balance').value) || 0;
+  const bal = parseFloat(document.getElementById('balance').value)||0;
   await supabase.from('accounts').insert({
     user_id: userId,
     name: document.getElementById('name').value,
     type: document.getElementById('type').value,
-    initial_balance: bal,
-    balance: bal,
-    currency: 'BRL',
+    initial_balance: bal, balance: bal, currency: 'BRL',
   });
-  closeModal();
-  document.getElementById('accForm').reset();
-  await load();
+  closeModal(); document.getElementById('accForm').reset(); await load();
 });
 </script>
 </body>

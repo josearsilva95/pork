@@ -6,13 +6,12 @@
   <title>Login — FinanceFlow</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>tailwind.config = { darkMode: 'class' }</script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
   <script src="js/config.js"></script>
 </head>
 <body class="bg-gray-950 text-white min-h-screen flex items-center justify-center p-4">
 
 <div class="w-full max-w-md">
-  <!-- Logo -->
   <div class="text-center mb-8">
     <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
       <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -23,10 +22,8 @@
     <p class="text-gray-400 mt-1">Controle financeiro premium</p>
   </div>
 
-  <!-- Card -->
   <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8">
     <h2 class="text-xl font-semibold mb-6">Entrar na conta</h2>
-
     <div id="error" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm"></div>
 
     <form id="loginForm" class="space-y-4">
@@ -40,41 +37,38 @@
         <input type="password" id="password" required placeholder="••••••••"
           class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
       </div>
-      <button type="submit" id="btn"
-        class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl py-3 font-semibold transition">
+      <button type="submit" id="btn" class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl py-3 font-semibold transition">
         Entrar
       </button>
     </form>
 
     <p class="text-center text-sm text-gray-500 mt-6">
-      Não tem conta? <a href="register.html" class="text-indigo-400 hover:underline">Criar conta</a>
+      Nao tem conta? <a href="register.html" class="text-indigo-400 hover:underline">Criar conta</a>
     </p>
   </div>
 </div>
 
 <script>
-  document.getElementById('loginForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const btn = document.getElementById('btn');
-    const err = document.getElementById('error');
-    btn.textContent = 'Entrando...';
-    btn.disabled = true;
-    err.classList.add('hidden');
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btn');
+  const err = document.getElementById('error');
+  btn.textContent = 'Entrando...'; btn.disabled = true;
+  err.classList.add('hidden');
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email: document.getElementById('email').value,
-      password: document.getElementById('password').value,
-    });
-
-    if (error) {
-      err.textContent = 'E-mail ou senha incorretos';
-      err.classList.remove('hidden');
-      btn.textContent = 'Entrar';
-      btn.disabled = false;
-    } else {
-      window.location.href = 'dashboard.html';
-    }
+  const { error } = await supabase.auth.signInWithPassword({
+    email: document.getElementById('email').value,
+    password: document.getElementById('password').value,
   });
+
+  if (error) {
+    err.textContent = 'E-mail ou senha incorretos';
+    err.classList.remove('hidden');
+    btn.textContent = 'Entrar'; btn.disabled = false;
+  } else {
+    window.location.href = 'dashboard.html';
+  }
+});
 </script>
 </body>
 </html>
