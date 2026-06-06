@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cadastro — FinanceFlow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+</head>
+<body class="bg-gray-950 text-white min-h-screen flex items-center justify-center p-4">
+
+<div class="w-full max-w-md">
+  <div class="text-center mb-8">
+    <div class="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/>
+      </svg>
+    </div>
+    <h1 class="text-3xl font-bold">FinanceFlow</h1>
+    <p class="text-gray-400 mt-1">Crie sua conta gratuita</p>
+  </div>
+
+  <div class="bg-gray-900 border border-gray-800 rounded-2xl p-8">
+    <h2 class="text-xl font-semibold mb-6">Criar conta</h2>
+
+    <div id="error" class="hidden mb-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-red-400 text-sm"></div>
+    <div id="success" class="hidden mb-4 p-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-emerald-400 text-sm"></div>
+
+    <form id="registerForm" class="space-y-4">
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Nome completo</label>
+        <input type="text" id="name" required placeholder="Seu Nome"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">E-mail</label>
+        <input type="email" id="email" required placeholder="seu@email.com"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      <div>
+        <label class="block text-sm text-gray-400 mb-1">Senha</label>
+        <input type="password" id="password" required placeholder="Mínimo 6 caracteres"
+          class="w-full bg-gray-800 border border-gray-700 rounded-xl px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-indigo-500 transition">
+      </div>
+      <button type="submit" id="btn"
+        class="w-full bg-indigo-600 hover:bg-indigo-500 rounded-xl py-3 font-semibold transition">
+        Criar conta
+      </button>
+    </form>
+
+    <p class="text-center text-sm text-gray-500 mt-6">
+      Já tem conta? <a href="login.html" class="text-indigo-400 hover:underline">Entrar</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('btn');
+    const err = document.getElementById('error');
+    const suc = document.getElementById('success');
+    btn.textContent = 'Criando conta...';
+    btn.disabled = true;
+    err.classList.add('hidden');
+
+    const { error } = await supabase.auth.signUp({
+      email: document.getElementById('email').value,
+      password: document.getElementById('password').value,
+      options: { data: { full_name: document.getElementById('name').value } }
+    });
+
+    if (error) {
+      err.textContent = error.message;
+      err.classList.remove('hidden');
+      btn.textContent = 'Criar conta';
+      btn.disabled = false;
+    } else {
+      suc.textContent = 'Conta criada! Verifique seu e-mail para confirmar.';
+      suc.classList.remove('hidden');
+      setTimeout(() => window.location.href = 'login.html', 3000);
+    }
+  });
+</script>
+</body>
+</html>

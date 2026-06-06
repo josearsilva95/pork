@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — FinanceFlow</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>tailwind.config = { darkMode: 'class' }</script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/layout.js"></script>
+</head>
+<body class="bg-gray-950 text-white h-screen flex overflow-hidden">
+
+<!-- Sidebar -->
+<aside id="sidebar" class="w-64 bg-gray-900 border-r border-gray-800 flex flex-col shrink-0 hidden lg:flex"></aside>
+
+<!-- Main -->
+<div class="flex-1 flex flex-col overflow-hidden">
+  <!-- Topbar -->
+  <header class="h-16 bg-gray-900/50 border-b border-gray-800 flex items-center px-6 shrink-0">
+    <h1 class="text-lg font-semibold">Dashboard</h1>
+    <span id="userName" class="ml-auto text-sm text-gray-400"></span>
+  </header>
+
+  <!-- Content -->
+  <main class="flex-1 overflow-y-auto p-6 space-y-6">
+
+    <!-- Stats -->
+    <div class="grid grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-400">Saldo Total</p>
+        <p id="totalBalance" class="text-2xl font-bold font-mono mt-1">—</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-400">Receitas do Mês</p>
+        <p id="totalIncome" class="text-2xl font-bold font-mono mt-1 text-emerald-400">—</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-400">Despesas do Mês</p>
+        <p id="totalExpense" class="text-2xl font-bold font-mono mt-1 text-red-400">—</p>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <p class="text-xs text-gray-400">Total Investido</p>
+        <p id="totalInvested" class="text-2xl font-bold font-mono mt-1 text-indigo-400">—</p>
+      </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 class="font-semibold mb-4">Receitas vs Despesas</h3>
+        <canvas id="evolutionChart" height="200"></canvas>
+      </div>
+      <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <h3 class="font-semibold mb-4">Despesas por Tipo</h3>
+        <canvas id="pieChart" height="200"></canvas>
+        <div id="pieEmpty" class="hidden text-center text-gray-500 text-sm py-8">Sem dados este mês</div>
+      </div>
+    </div>
+
+    <!-- Recent transactions -->
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-semibold">Transações Recentes</h3>
+        <a href="transactions.html" class="text-xs text-indigo-400 hover:underline">Ver todas →</a>
+      </div>
+      <div id="recentTx" class="space-y-2">
+        <div class="text-gray-500 text-sm text-center py-6">Carregando...</div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+(async () => {
+  const session = await requireAuth();
+  document.getElementById('userName').textContent = session.user.email;
+  renderLayout('dashboard.html');
+
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1;
+  const start = `${y}-${String(m).padStart(2,'0')}-01`;
+  const end = `${y}-${String(m).padStart(2,'0')}-31`;
+
+  // Saldo total de contas
+  const { data: accounts } = await supabase.from('accounts').select('balance').eq('user_id', session.user.id).is('deleted_at', null);
+  const balance = (accounts || []).reduce((s, a) => s + parseFloat(a.balance), 0);
+  document.getElementById('totalBalance').textContent = formatCurrency(balance);
+
+  // Receitas e despesas do mês
+  const { data: txs } = await supabase.from('transactions').select('type,amount,description,date,category_id').eq('user_id', session.user.id).gte('date', start).lte('date', end).is('deleted_at', null);
+
+  const income = (txs || []).filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0);
+  const expense = (txs || []).filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0);
+  document.getElementById('totalIncome').textContent = formatCurrency(income);
+  document.getElementById('totalExpense').textContent = formatCurrency(expense);
+
+  // Total investido
+  const { data: invs } = await supabase.from('investments').select('invested_amount').eq('user_id', session.user.id).is('deleted_at', null);
+  const invested = (invs || []).reduce((s, i) => s + parseFloat(i.invested_amount), 0);
+  document.getElementById('totalInvested').textContent = formatCurrency(invested);
+
+  // Gráfico evolução (últimos 6 meses)
+  const months = [];
+  const incomeData = [], expenseData = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(y, m - 1 - i, 1);
+    const my = d.getFullYear(), mm = d.getMonth() + 1;
+    const ms = `${my}-${String(mm).padStart(2,'0')}-01`;
+    const me = `${my}-${String(mm).padStart(2,'0')}-31`;
+    months.push(d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }));
+    const { data: mt } = await supabase.from('transactions').select('type,amount').eq('user_id', session.user.id).gte('date', ms).lte('date', me).is('deleted_at', null);
+    incomeData.push((mt || []).filter(t => t.type === 'income').reduce((s, t) => s + parseFloat(t.amount), 0));
+    expenseData.push((mt || []).filter(t => t.type === 'expense').reduce((s, t) => s + parseFloat(t.amount), 0));
+  }
+
+  new Chart(document.getElementById('evolutionChart'), {
+    type: 'line',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Receitas', data: incomeData, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,.1)', tension: 0.4, fill: true },
+        { label: 'Despesas', data: expenseData, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,.1)', tension: 0.4, fill: true }
+      ]
+    },
+    options: { responsive: true, plugins: { legend: { labels: { color: '#9ca3af' } } }, scales: { x: { ticks: { color: '#6b7280' }, grid: { color: '#1f2937' } }, y: { ticks: { color: '#6b7280' }, grid: { color: '#1f2937' } } } }
+  });
+
+  // Pie — despesas por categoria (mês atual)
+  const catMap = {};
+  (txs || []).filter(t => t.type === 'expense').forEach(t => {
+    const k = t.category_id || 'Outros';
+    catMap[k] = (catMap[k] || 0) + parseFloat(t.amount);
+  });
+  const catKeys = Object.keys(catMap);
+  if (catKeys.length) {
+    new Chart(document.getElementById('pieChart'), {
+      type: 'doughnut',
+      data: {
+        labels: catKeys.map((_, i) => `Cat ${i+1}`),
+        datasets: [{ data: catKeys.map(k => catMap[k]), backgroundColor: ['#6366f1','#8b5cf6','#ec4899','#ef4444','#f97316','#eab308','#22c55e','#06b6d4'], borderWidth: 0 }]
+      },
+      options: { responsive: true, plugins: { legend: { labels: { color: '#9ca3af', font: { size: 11 } } } }, cutout: '65%' }
+    });
+  } else {
+    document.getElementById('pieChart').classList.add('hidden');
+    document.getElementById('pieEmpty').classList.remove('hidden');
+  }
+
+  // Transações recentes
+  const { data: recent } = await supabase.from('transactions').select('*').eq('user_id', session.user.id).is('deleted_at', null).order('date', { ascending: false }).limit(8);
+  const container = document.getElementById('recentTx');
+  if (!recent?.length) { container.innerHTML = '<p class="text-gray-500 text-sm text-center py-6">Nenhuma transação</p>'; return; }
+  container.innerHTML = recent.map(t => `
+    <div class="flex items-center gap-3 p-2 rounded-xl hover:bg-gray-800 transition">
+      <div class="w-9 h-9 rounded-xl flex items-center justify-center text-lg ${t.type === 'income' ? 'bg-emerald-500/10' : 'bg-red-500/10'}">
+        ${t.type === 'income' ? '↑' : '↓'}
+      </div>
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium truncate">${t.description}</p>
+        <p class="text-xs text-gray-500">${formatDate(t.date)}</p>
+      </div>
+      <span class="font-mono text-sm font-semibold ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}">
+        ${t.type === 'income' ? '+' : '-'}${formatCurrency(t.amount)}
+      </span>
+    </div>`).join('');
+})();
+</script>
+</body>
+</html>
