@@ -1,0 +1,78 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths: [backend/**]
+  pull_request:
+    branches: [main]
+    paths: [backend/**]
+
+jobs:
+  test:
+    name: Lint & Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: financeflow_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Type check (mypy)
+        run: mypy app/ --ignore-missing-imports
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql+asyncpg://postgres:postgres@localhost:5432/financeflow_test
+          SECRET_KEY: test-secret-key-for-ci-only-32chars
+          SUPABASE_URL: https://test.supabase.co
+          SUPABASE_ANON_KEY: test
+          SUPABASE_SERVICE_ROLE_KEY: test
+          SUPABASE_JWT_SECRET: test
+          ENCRYPTION_KEY: dGVzdC1lbmNyeXB0aW9uLWtleS0zMi1ieXRlcw==
+        run: pytest --cov=app --cov-report=xml -v
+
+  deploy:
+    name: Deploy to Railway
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+        run: |
+          cd backend
+          railway up --service financeflow-api
